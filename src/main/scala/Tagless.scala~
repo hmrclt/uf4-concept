@@ -1,0 +1,30 @@
+import cats.implicits._
+import cats.Monad
+import cats.Id
+import shapeless._
+
+object Tagless {
+
+  trait Language[Wrapper[_]] {
+    def number(v: Int): Wrapper[Int]
+    def increment(a: Int): Wrapper[Int]
+    def add(a: Int, b: Int): Wrapper[Int]
+  }
+
+  val idInterpreter = new Language[Id] {
+    override def number(v: Int): Int = v
+    override def increment(a: Int): Int = a + 1
+    override def add(a: Int, b: Int): Int = a + b
+  }
+
+  def addAndIncrement[F[_]: Monad](a: Int, b: Int)(implicit interpreter: Language[F]): F[Int] = {
+    import interpreter._
+    for {
+      fa <- number(a)
+      fb <- number(b)
+      fc <- add(fa,fb)
+      fd <- increment(fc)
+    } yield (fd)
+  }
+
+}
